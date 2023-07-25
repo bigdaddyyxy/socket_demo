@@ -1,0 +1,31 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/yxy/socket_demo/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	//
+Accept	wrap.c	/^int Accept(int fd, struct sockaddr *sa, socklen_t *salenptr)$/;"	f	typeref:typename:int
+Bind	wrap.c	/^void Bind(int fd, const struct sockaddr *sa, socklen_t salen)$/;"	f	typeref:typename:void
+Close	wrap.c	/^void Close(int fd)$/;"	f	typeref:typename:void
+Connect	wrap.c	/^void Connect(int fd, const struct sockaddr *sa, socklen_t salen)$/;"	f	typeref:typename:void
+Listen	wrap.c	/^void Listen(int fd, int backlog)$/;"	f	typeref:typename:void
+MAXLINE	client.c	/^#define MAXLINE /;"	d	file:
+MAXLINE	server.c	/^#define MAXLINE /;"	d	file:
+Read	wrap.c	/^ssize_t Read(int fd, void *ptr, size_t nbytes)$/;"	f	typeref:typename:ssize_t
+Readline	wrap.c	/^ssize_t Readline(int fd, void *vptr, size_t maxlen)$/;"	f	typeref:typename:ssize_t
+Readn	wrap.c	/^ssize_t Readn(int fd, void *vptr, size_t n)$/;"	f	typeref:typename:ssize_t
+SERV_PORT	client.c	/^#define SERV_PORT /;"	d	file:
+SERV_PORT	server.c	/^#define SERV_PORT /;"	d	file:
+Socket	wrap.c	/^int Socket(int family, int type, int protocol)$/;"	f	typeref:typename:int
+Write	wrap.c	/^ssize_t Write(int fd, const void *ptr, size_t nbytes)$/;"	f	typeref:typename:ssize_t
+Writen	wrap.c	/^ssize_t Writen(int fd, const void *vptr, size_t n)$/;"	f	typeref:typename:ssize_t
+_WRAP_H	wrap.h	/^#define _WRAP_H$/;"	d
+main	client.c	/^int main(int argc, char *argv[])$/;"	f	typeref:typename:int
+main	server.c	/^int main(void)$/;"	f	typeref:typename:int
+my_read	wrap.c	/^ssize_t my_read(int fd, char *ptr)$/;"	f	typeref:typename:ssize_t
+perr_exit	wrap.c	/^void perr_exit(const char *s)$/;"	f	typeref:typename:void

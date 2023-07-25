@@ -1,7 +1,4 @@
 /* server.c */
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
 #include "wrap.h"
 #include <strings.h>
 #include <arpa/inet.h>
@@ -9,14 +6,16 @@
 #define MAXLINE 80
 #define SERV_PORT 8000
 
-int main(void)
+int main(int argc, char **argv)
 {
-	struct sockaddr_in servaddr, cliaddr;
-	socklen_t cliaddr_len;
-	int listenfd, connfd;
+	int i, maxi, maxfd, listenfd, connfd, sockfd;
+	int nready, client[FD_SETSIZE];
+	ssize_t n;
+	fd_set rset, allset;
 	char buf[MAXLINE];
 	char str[INET_ADDRSTRLEN];
-	int i, n;
+	socklen_t cliaddr_len;
+	struct sockaddr_in	cliaddr, servaddr;
 
     /* 打开一个网络通讯接口
     对于IPv4，family参数指定为AF_INET。
@@ -24,17 +23,11 @@ int main(void)
     如果是UDP协议，则type参数指定为SOCK_DGRAM，表示面向数据报的传输协议。 */
 	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
 
-    /**
-     * 使用setsockopt()设置socket描述符的选项SO_REUSEADDR为1，
-     * 表示允许创建端口号相同但IP地址不同的多个socket描述符。
-    */
-    int opt = 1;
-    setsockopt(listenfdm SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
 	bzero(&servaddr, sizeof(servaddr));
-	servaddr.sin_family = AF_INET;
+	servaddr.sin_family      = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = htons(SERV_PORT);
+	servaddr.sin_port        = htons(SERV_PORT);
+
     /**
      * 将参数sockfd和myaddr绑定在一起,
      * 使sockfd这个用于网络通讯的文件描述符监听myaddr所描述的地址和端口号。
@@ -52,35 +45,67 @@ int main(void)
      * 传出的是客户端地址结构体的实际长度（有可能没有占满调用者提供的缓冲区）。
      * 如果给cliaddr参数传NULL，表示不关心客户端的地址。
     */
-	printf("Accepting connections ...\n");
-	while (1) {
-		cliaddr_len = sizeof(cliaddr);
-		connfd = Accept(listenfd,
-				(struct sockaddr *)&cliaddr, &cliaddr_len);
-        n = fork();
-        if (n == -1) {
-            perror("call to fork");
-            exit(1);
-        } else if ( n==0 ) {
-            close (listenfd);
-            while (1) {
-				n = Read(connfd, buf, MAXLINE);
-				if (n == 0) {
-					printf("the other side has been closed.\n");
+
+	maxfd = listenfd;		/* initialize */
+	maxi = -1;			/* index into client[] array */
+	for (i = 0; i < FD_SETSIZE; i++)
+		client[i] = -1;	/* -1 indicates available entry */
+	FD_ZERO(&allset);
+	FD_SET(listenfd, &allset);
+
+	for ( ; ; ) {
+		rset = allset;	/* structure assignment */
+		nready = select(maxfd+1, &rset, NULL, NULL, NULL);
+		if (nready < 0)
+			perr_exit("select error");
+
+		if (FD_ISSET(listenfd, &rset)) { /* new client connection */
+			cliaddr_len = sizeof(cliaddr);
+			connfd = Accept(listenfd, (struct sockaddr *)&cliaddr, &cliaddr_len);
+
+			printf("received from %s at PORT %d\n",
+			       inet_ntop(AF_INET, &cliaddr.sin_addr, str, sizeof(str)),
+			       ntohs(cliaddr.sin_port));
+
+			for (i = 0; i < FD_SETSIZE; i++)
+				if (client[i] < 0) {
+					client[i] = connfd; /* save descriptor */
 					break;
 				}
-				printf("received from %s at PORT %d\n",
-				       inet_ntop(AF_INET, &cliaddr.sin_addr, str, sizeof(str)),
-				       ntohs(cliaddr.sin_port));
-
-				for (i = 0; i < n; i++)
-					buf[i] = toupper(buf[i]);
-				Write(connfd, buf, n);
+			if (i == FD_SETSIZE) {
+				fputs("too many clients\n", stderr);
+				exit(1);
 			}
-			Close(connfd);
-            exit(0);
-        } else {
-            Close(connfd);
-        }
+
+			FD_SET(connfd, &allset);	/* add new descriptor to set */
+			if (connfd > maxfd)
+				maxfd = connfd; /* for select */
+			if (i > maxi)
+				maxi = i;	/* max index in client[] array */
+
+			if (--nready == 0)
+				continue;	/* no more readable descriptors */
+		}
+
+		for (i = 0; i <= maxi; i++) {	/* check all clients for data */
+			if ( (sockfd = client[i]) < 0)
+				continue;
+			if (FD_ISSET(sockfd, &rset)) {
+				if ( (n = Read(sockfd, buf, MAXLINE)) == 0) {
+					/* connection closed by client */
+					Close(sockfd);
+					FD_CLR(sockfd, &allset);
+					client[i] = -1;
+				} else {
+					int j;
+					for (j = 0; j < n; j++)
+						buf[j] = toupper(buf[j]);
+					Write(sockfd, buf, n);
+				}
+
+				if (--nready == 0)
+					break;	/* no more readable descriptors */
+			}
+		}
 	}
 }
